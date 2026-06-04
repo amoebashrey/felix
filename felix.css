@@ -1,0 +1,114 @@
+/* ============================================================
+   Felix — sub-brand overrides
+   Inherits tokens.css. Rust replaces lime as the protagonist.
+   Lime survives only at: footer monogram + roadmap "Shipped" pulse.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Fraunces:ital,opsz,wght@0,9..144,200..900;1,9..144,200..900&display=swap');
+
+:root {
+  /* Display fonts — Bricolage Grotesque for headings, Fraunces italic for breaks */
+  --font-display:         'Bricolage Grotesque', 'Geist', sans-serif;
+  --font-italic-display:  'Fraunces', 'Instrument Serif', serif;
+
+  /* Felix accent override — rust is the new protagonist */
+  --accent:        var(--rust-400);
+  --accent-fg:     var(--ink-25);
+  --accent-hover:  var(--rust-500);
+  --accent-tint:   var(--rust-100);
+
+  /* Path color coding — used in Section 3 flowchart + Section 5 scenario cards */
+  --path-resolve:  var(--rust-400);
+  --path-ask:      var(--lavender-400);
+  --path-escalate: var(--rust-500);
+
+  /* Soft glow for ambient warmth */
+  --felix-glow:    var(--rust-300);
+
+  /* Focus ring uses rust now, not lime */
+  --focus-ring:    0 0 0 2px var(--bg), 0 0 0 4px var(--rust-400);
+}
+::selection { background: var(--rust-400); color: var(--ink-25); }
+
+/* Dark mode: brutal shadow uses rust instead of lime */
+[data-theme="dark"] {
+  --shadow-brutal-sm: 3px 3px 0 var(--rust-400);
+  --shadow-brutal-md: 5px 5px 0 var(--rust-400);
+  --shadow-brutal-lg: 8px 8px 0 var(--rust-400);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shadow-brutal-sm: 3px 3px 0 var(--rust-400);
+    --shadow-brutal-md: 5px 5px 0 var(--rust-400);
+    --shadow-brutal-lg: 8px 8px 0 var(--rust-400);
+  }
+}
+
+/* Dark-mode headings — drop from ink-25 to ink-100 so they don't read as full white */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3 {
+  color: var(--ink-100);
+}
+
+/* ─── Felix mascot — pixel-art PNG with crisp scaling ─────── */
+.felix-mascot {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+  flex-shrink: 0;
+}
+.felix-mascot--full { width: auto; height: 80px; }
+.felix-mascot--full-lg { width: auto; height: 120px; }
+.felix-mascot--avatar {
+  width: 40px; height: 40px;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 6px;
+}
+.felix-mascot--avatar-sm {
+  width: 28px; height: 28px;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 5px;
+}
+.felix-mascot--nav {
+  width: 32px; height: 32px;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 5px;
+}
+
+/* ─── Felix's voice — VT323 for every Felix-spoken word ──────── */
+.felix-voice {
+  font-family: var(--font-pixel);
+  font-size: 1.125em;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  color: var(--fg);
+  white-space: pre-line;
+}
+
+/* ─── Visually hidden helper for a11y descriptions ──────────── */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* ─── Skip to content ──────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  left: 8px; top: -40px;
+  background: var(--rust-400);
+  color: var(--ink-25);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  z-index: 10000;
+  transition: top var(--duration-fast) var(--ease-out);
+}
+.skip-link:focus { top: 8px; }

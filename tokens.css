@@ -1,0 +1,687 @@
+/* ============================================================
+   shrey.lab — Design Tokens
+   The single source of truth for the brand.
+   Import this once in any project and every other file inherits it.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Sansita+Swashed:wght@400;500;700&family=VT323&display=swap');
+
+:root {
+  /* ─── Brand Colors ─────────────────────────────────────────
+     Lime is the protagonist — used like neon signage, never wallpaper.
+     Charcoal/ink is the stage. Lavender + rust are supporting cast.
+     ─────────────────────────────────────────────────────── */
+
+  /* Signature — the one color that says "this is shrey.lab" */
+  --lime-50:  #F4FCDF;
+  --lime-100: #E8F9BC;
+  --lime-200: #D6F488;
+  --lime-300: #C2EE54;
+  --lime-400: #A8E10C;   /* primary signature */
+  --lime-500: #94C90A;
+  --lime-600: #7AAA08;
+  --lime-700: #5C8006;
+
+  /* Lavender — soft, considered, used for secondary surfaces & quiet accents */
+  --lavender-50:  #F4F1FB;
+  --lavender-100: #E6DFF7;
+  --lavender-200: #CFC3EE;
+  --lavender-300: #B5A4E2;
+  --lavender-400: #9C86D4;   /* primary lavender */
+  --lavender-500: #7E68B8;
+  --lavender-600: #604E94;
+
+  /* Rust — warm counterweight to lime, used for emphasis & destructive intent */
+  --rust-50:  #FBEFE8;
+  --rust-100: #F6D9C9;
+  --rust-200: #EDB395;
+  --rust-300: #E48C61;
+  --rust-400: #D6692F;   /* primary rust */
+  --rust-500: #B85420;
+  --rust-600: #913F18;
+
+  /* Ink — neutrals tuned warm so they don't feel sterile */
+  --ink-0:    #FFFFFF;
+  --ink-25:   #FBFAF7;   /* warm paper — light mode default bg */
+  --ink-50:   #F5F4F0;
+  --ink-100:  #EAE8E1;
+  --ink-200:  #D4D1C7;
+  --ink-300:  #B0ACA0;
+  --ink-400:  #807C72;
+  --ink-500:  #4F4D47;
+  --ink-600:  #36352F;
+  --ink-700:  #25241F;
+  --ink-800:  #181815;   /* dark mode default bg */
+  --ink-900:  #0E0E0C;
+  --ink-1000: #000000;
+
+  /* Semantic — what the colors mean, not what they look like.
+     Components reference these. Theme switching swaps these. */
+  --bg:           var(--ink-25);
+  --bg-elevated:  var(--ink-0);
+  --bg-sunken:    var(--ink-50);
+  --bg-inverse:   var(--ink-800);
+
+  --fg:           var(--ink-800);
+  --fg-muted:     var(--ink-500);
+  --fg-subtle:    var(--ink-400);
+  --fg-inverse:   var(--ink-25);
+
+  --border:       var(--ink-100);
+  --border-strong:var(--ink-200);
+  --border-focus: var(--lime-400);
+
+  --accent:       var(--lime-400);
+  --accent-hover: var(--lime-500);
+  --accent-fg:    var(--ink-900);    /* text *on* accent — dark for AA contrast */
+
+  --secondary:    var(--lavender-400);
+  --secondary-fg: var(--ink-0);
+
+  --danger:       var(--rust-400);
+  --danger-fg:    var(--ink-0);
+
+  --success:      var(--lime-500);
+
+  /* ─── Typography ───────────────────────────────────────────
+     Five faces, each with a defined job. Mix is intentional, not chaotic.
+     ─────────────────────────────────────────────────────── */
+
+  --font-display:  'Instrument Serif', 'Times New Roman', serif;     /* italic editorial moments */
+  --font-sans:     'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;  /* workhorse */
+  --font-mono:     'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;             /* technical voice */
+  --font-playful:  'Sansita Swashed', cursive;                                          /* warm playful display */
+  --font-pixel:    'VT323', monospace;                                                  /* retro pixel hits */
+
+  /* Modular type scale — 1.250 (Major Third) ratio off 16px base */
+  --text-3xs: 0.625rem;   /* 10px */
+  --text-2xs: 0.75rem;    /* 12px */
+  --text-xs:  0.8125rem;  /* 13px */
+  --text-sm:  0.875rem;   /* 14px */
+  --text-base:1rem;       /* 16px */
+  --text-lg:  1.125rem;   /* 18px */
+  --text-xl:  1.375rem;   /* 22px */
+  --text-2xl: 1.75rem;    /* 28px */
+  --text-3xl: 2.25rem;    /* 36px */
+  --text-4xl: 3rem;       /* 48px */
+  --text-5xl: 4rem;       /* 64px */
+  --text-6xl: 5.5rem;     /* 88px */
+
+  --leading-tight:   1.1;
+  --leading-snug:    1.25;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.7;
+
+  --tracking-tight:  -0.02em;
+  --tracking-snug:   -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+  --tracking-mono:   -0.02em;   /* mono tightens slightly for visual parity */
+
+  --weight-light:    300;
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* ─── Spacing ──────────────────────────────────────────────
+     8-point grid. Stick to these values. No magic numbers in components.
+     ─────────────────────────────────────────────────────── */
+  --space-0:  0;
+  --space-1:  0.25rem;   /* 4 */
+  --space-2:  0.5rem;    /* 8 */
+  --space-3:  0.75rem;   /* 12 */
+  --space-4:  1rem;      /* 16 */
+  --space-5:  1.5rem;    /* 24 */
+  --space-6:  2rem;      /* 32 */
+  --space-7:  3rem;      /* 48 */
+  --space-8:  4rem;      /* 64 */
+  --space-9:  6rem;      /* 96 */
+  --space-10: 8rem;      /* 128 */
+
+  /* ─── Radii ────────────────────────────────────────────────
+     Slightly soft corners. Premium feel. Never aggressively round.
+     ─────────────────────────────────────────────────────── */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   8px;     /* default for buttons, inputs */
+  --radius-lg:   12px;    /* cards */
+  --radius-xl:   16px;    /* large surfaces */
+  --radius-2xl:  24px;    /* hero panels */
+  --radius-full: 9999px;  /* pills, avatars */
+
+  /* ─── Borders ──────────────────────────────────────────────
+     Thin and subtle by default. Brutalist mode bumps width.
+     ─────────────────────────────────────────────────────── */
+  --border-width-hairline: 0.5px;
+  --border-width-thin:     1px;
+  --border-width-medium:   2px;
+  --border-width-thick:    3px;
+  --border-width-brutal:   4px;
+
+  /* ─── Shadows ──────────────────────────────────────────────
+     Soft by default. Brutalist offset shadows reserved for accent moments.
+     ─────────────────────────────────────────────────────── */
+  --shadow-none:    none;
+  --shadow-xs:      0 1px 2px rgba(14, 14, 12, 0.04);
+  --shadow-sm:      0 1px 3px rgba(14, 14, 12, 0.06), 0 1px 2px rgba(14, 14, 12, 0.04);
+  --shadow-md:      0 4px 8px rgba(14, 14, 12, 0.06), 0 2px 4px rgba(14, 14, 12, 0.04);
+  --shadow-lg:      0 12px 24px rgba(14, 14, 12, 0.08), 0 4px 8px rgba(14, 14, 12, 0.04);
+  --shadow-xl:      0 24px 48px rgba(14, 14, 12, 0.10), 0 8px 16px rgba(14, 14, 12, 0.05);
+
+  /* Brutalist offset — for accent moments */
+  --shadow-brutal-sm: 3px 3px 0 var(--ink-800);
+  --shadow-brutal-md: 5px 5px 0 var(--ink-800);
+  --shadow-brutal-lg: 8px 8px 0 var(--ink-800);
+
+  /* Glow — sparingly, on lime, for hero accents only */
+  --shadow-glow-lime:    0 0 0 1px var(--lime-400), 0 0 24px rgba(168, 225, 12, 0.35);
+  --shadow-glow-lavender:0 0 0 1px var(--lavender-400), 0 0 24px rgba(156, 134, 212, 0.30);
+
+  /* ─── Glass surfaces ───────────────────────────────────────
+     Apple-esque frosted glass. Use with backdrop-filter blur.
+     ─────────────────────────────────────────────────────── */
+  --glass-bg-light:    rgba(255, 255, 255, 0.65);
+  --glass-bg-dark:     rgba(24, 24, 21, 0.55);
+  --glass-border:      rgba(255, 255, 255, 0.18);
+  --glass-blur:        blur(20px) saturate(1.4);
+  --glass-blur-strong: blur(40px) saturate(1.6);
+
+  /* ─── Motion ───────────────────────────────────────────────
+     Micro-interactions. Quick, considered, never bouncy.
+     ─────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);     /* default — confident exit */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);     /* state changes */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* sparingly, for reveals */
+
+  --duration-instant: 80ms;
+  --duration-fast:    160ms;   /* default */
+  --duration-base:    240ms;
+  --duration-slow:    400ms;
+  --duration-page:    600ms;
+
+  /* ─── Layout ───────────────────────────────────────────────  */
+  --container-sm:  640px;
+  --container-md:  768px;
+  --container-lg:  1024px;
+  --container-xl:  1280px;
+  --container-2xl: 1440px;
+
+  --z-base:    0;
+  --z-raised:  10;
+  --z-overlay: 100;
+  --z-modal:   1000;
+  --z-toast:   2000;
+
+  /* ─── Focus ring ───────────────────────────────────────────
+     Accessibility is non-negotiable. Lime ring on every focusable.
+     ─────────────────────────────────────────────────────── */
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--lime-400);
+
+  /* ─── Data viz palette ─────────────────────────────────────
+     Series cycle for charts. Lime always leads (the protagonist).
+     ─────────────────────────────────────────────────────── */
+  --chart-1: var(--lime-400);
+  --chart-2: var(--lavender-400);
+  --chart-3: var(--rust-400);
+  --chart-4: var(--ink-500);
+  --chart-5: var(--lime-200);
+  --chart-6: var(--lavender-200);
+
+  --chart-grid:        var(--border);
+  --chart-axis:        var(--fg-muted);
+  --chart-tooltip-bg:  var(--ink-800);
+  --chart-tooltip-fg:  var(--ink-25);
+
+  /* ─── Code syntax tokens ───────────────────────────────────
+     Used by syntax highlighters. Keep in sync with code-theme.css.
+     ─────────────────────────────────────────────────────── */
+  --code-bg:        var(--ink-900);
+  --code-fg:        var(--ink-25);
+  --code-keyword:   var(--lime-400);
+  --code-string:    var(--lavender-300);
+  --code-comment:   var(--ink-400);
+  --code-number:    var(--rust-300);
+  --code-variable:  var(--ink-25);
+  --code-function:  var(--lime-300);
+  --code-operator:  var(--ink-200);
+  --code-tag:       var(--lavender-400);
+
+  /* ─── Image treatment ──────────────────────────────────────
+     B&W default, saturate on hover. Locked rule.
+     ─────────────────────────────────────────────────────── */
+  --image-filter-default: grayscale(100%) contrast(1.05);
+  --image-filter-active:  grayscale(0%) contrast(1);
+  --image-transition:     filter var(--duration-slow) var(--ease-out);
+}
+
+/* ─── Dark mode ──────────────────────────────────────────────
+   Auto-applies via prefers-color-scheme, manual via [data-theme="dark"].
+   ──────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:           var(--ink-800);
+    --bg-elevated:  var(--ink-700);
+    --bg-sunken:    var(--ink-900);
+    --bg-inverse:   var(--ink-25);
+
+    --fg:           var(--ink-25);
+    --fg-muted:     var(--ink-300);
+    --fg-subtle:    var(--ink-400);
+    --fg-inverse:   var(--ink-800);
+
+    --border:       var(--ink-700);
+    --border-strong:var(--ink-600);
+
+    --shadow-brutal-sm: 3px 3px 0 var(--lime-400);
+    --shadow-brutal-md: 5px 5px 0 var(--lime-400);
+    --shadow-brutal-lg: 8px 8px 0 var(--lime-400);
+  }
+}
+
+[data-theme="dark"] {
+  --bg:           var(--ink-800);
+  --bg-elevated:  var(--ink-700);
+  --bg-sunken:    var(--ink-900);
+  --bg-inverse:   var(--ink-25);
+
+  --fg:           var(--ink-25);
+  --fg-muted:     var(--ink-300);
+  --fg-subtle:    var(--ink-400);
+  --fg-inverse:   var(--ink-800);
+
+  --border:       var(--ink-700);
+  --border-strong:var(--ink-600);
+
+  --shadow-brutal-sm: 3px 3px 0 var(--lime-400);
+  --shadow-brutal-md: 5px 5px 0 var(--lime-400);
+  --shadow-brutal-lg: 8px 8px 0 var(--lime-400);
+}
+
+/* ─── Reduced motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Resets & base ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--fg);
+  background: var(--bg);
+  font-feature-settings: "ss01", "cv11";   /* Geist's stylistic alternates */
+}
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+::selection { background: var(--lime-400); color: var(--ink-900); }
+
+/* ─── Image treatment (the locked rule) ─────────────────────
+   B&W default, saturate on hover. Touch devices skip the filter.
+   ──────────────────────────────────────────────────────── */
+.lab-image,
+img.lab-image,
+.lab-image > img {
+  filter: var(--image-filter-default);
+  transition: var(--image-transition);
+  border-radius: var(--radius-md);
+}
+@media (hover: hover) {
+  .lab-image:hover,
+  .lab-image:hover > img,
+  a:hover .lab-image,
+  a:hover .lab-image > img {
+    filter: var(--image-filter-active);
+  }
+}
+@media (hover: none) {
+  .lab-image, .lab-image > img { filter: none; }
+}
+.lab-image-color, .lab-image-color > img { filter: none !important; }
+
+/* ─── Inline links ────────────────────────────────────────── */
+.lab-link {
+  color: var(--fg);
+  text-decoration: none;
+  position: relative;
+  background-image: linear-gradient(var(--lime-400), var(--lime-400));
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0 1.5px;
+  transition: background-size var(--duration-base) var(--ease-out);
+}
+.lab-link:hover { background-size: 100% 1.5px; }
+
+/* ─── Code blocks ─────────────────────────────────────────── */
+code.inline,
+:not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  color: var(--rust-500);
+  border: 1px solid var(--border);
+  letter-spacing: var(--tracking-mono);
+}
+[data-theme="dark"] :not(pre) > code,
+[data-theme="dark"] code.inline { color: var(--rust-300); }
+
+pre.code-block {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  line-height: var(--leading-relaxed);
+  letter-spacing: var(--tracking-mono);
+  margin: 0;
+}
+pre.code-block .tok-keyword  { color: var(--code-keyword); }
+pre.code-block .tok-string   { color: var(--code-string); }
+pre.code-block .tok-comment  { color: var(--code-comment); font-style: italic; }
+pre.code-block .tok-number   { color: var(--code-number); }
+pre.code-block .tok-function { color: var(--code-function); }
+pre.code-block .tok-tag      { color: var(--code-tag); }
+pre.code-block .tok-operator { color: var(--code-operator); }
+
+/* ─── Pulse animation (used by status pill, lime indicators) ── */
+@keyframes pulse-lime {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168, 225, 12, 0.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(168, 225, 12, 0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes lime-line-draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ─── Page-load reveal helpers (sequential fade-up) ────────── */
+.lab-reveal {
+  animation: fade-up var(--duration-slow) var(--ease-out) both;
+}
+.lab-reveal-stagger > * {
+  animation: fade-up var(--duration-slow) var(--ease-out) both;
+}
+.lab-reveal-stagger > *:nth-child(1) { animation-delay:    0ms; }
+.lab-reveal-stagger > *:nth-child(2) { animation-delay:   60ms; }
+.lab-reveal-stagger > *:nth-child(3) { animation-delay:  120ms; }
+.lab-reveal-stagger > *:nth-child(4) { animation-delay:  180ms; }
+.lab-reveal-stagger > *:nth-child(5) { animation-delay:  240ms; }
+.lab-reveal-stagger > *:nth-child(6) { animation-delay:  300ms; }
+.lab-reveal-stagger > *:nth-child(7) { animation-delay:  360ms; }
+.lab-reveal-stagger > *:nth-child(8) { animation-delay:  420ms; }
+.lab-reveal-stagger > *:nth-child(9) { animation-delay:  480ms; }
+
+/* ─── Cinematic load (home hero only) ────────────────────────
+   A lime line draws across the top of the hero, then content reveals.
+   ──────────────────────────────────────────────────────── */
+.lab-cinematic {
+  position: relative;
+}
+.lab-cinematic::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--lime-400);
+  transform-origin: left;
+  animation: lime-line-draw 600ms var(--ease-out) both;
+}
+.lab-cinematic > * {
+  animation: fade-up 600ms var(--ease-out) 200ms both;
+}
+
+/* ─── Surfaces (the four new ones you locked) ─────────────────
+   Use sparingly — each is a "section technique," not wallpaper.
+   ──────────────────────────────────────────────────────── */
+
+/* Grid paper — engineer's notebook. Used for "behind the scenes" sections. */
+.lab-surface-grid-paper {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(to right,  var(--lavender-100) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--lavender-100) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+[data-theme="dark"] .lab-surface-grid-paper {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(to right,  rgba(156, 134, 212, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(156, 134, 212, 0.08) 1px, transparent 1px);
+}
+
+/* Dotted paper — Notion-style dot grid. Calm. */
+.lab-surface-dotted {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--ink-200) 1px, transparent 1px);
+  background-size: 18px 18px;
+  background-position: 0 0;
+}
+[data-theme="dark"] .lab-surface-dotted {
+  background-image: radial-gradient(rgba(168, 225, 12, 0.10) 1px, transparent 1px);
+}
+
+/* Crushed paper — soft texture, warm. The "mood" surface for editorial blocks. */
+.lab-surface-crushed {
+  background-color: var(--ink-25);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(214, 105, 47, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 80% 60%, rgba(156, 134, 212, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 50% 90%, rgba(168, 225, 12, 0.03) 0%, transparent 40%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' seed='5'/><feColorMatrix values='0 0 0 0 0.14  0 0 0 0 0.14  0 0 0 0 0.12  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-blend-mode: multiply;
+}
+[data-theme="dark"] .lab-surface-crushed {
+  background-color: var(--ink-800);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(214, 105, 47, 0.10) 0%, transparent 40%),
+    radial-gradient(circle at 80% 60%, rgba(156, 134, 212, 0.10) 0%, transparent 40%),
+    radial-gradient(circle at 50% 90%, rgba(168, 225, 12, 0.06) 0%, transparent 40%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' seed='5'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-blend-mode: screen;
+}
+
+/* Beveled edge — chiseled inner-shadow for a tactile feel. Use sparingly. */
+.lab-surface-beveled {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.6),
+    inset -1px -1px 0 rgba(14, 14, 12, 0.06),
+    inset 0 -3px 8px rgba(14, 14, 12, 0.04),
+    0 1px 2px rgba(14, 14, 12, 0.04);
+}
+[data-theme="dark"] .lab-surface-beveled {
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.04),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.4),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Distinctive micro-interactions (the signature ones) ─────
+   You asked for unique, brand-specific micro-interactions.
+   These are the ones that'll quietly say "shrey.lab made this."
+   ──────────────────────────────────────────────────────── */
+
+/* 1. Theme crossfade — when you toggle themes, colors transition instead of swap.
+      Adds a subtle premium feel. Costs nothing. */
+:root {
+  --theme-transition: background-color 300ms var(--ease-out),
+                      color 300ms var(--ease-out),
+                      border-color 300ms var(--ease-out);
+}
+body, .lab-theme-fade {
+  transition: var(--theme-transition);
+}
+
+/* 2. Lime-scribble underline on primary nav links.
+      Hand-drawn feel via SVG. The signature "made by a human" detail. */
+.lab-nav-link {
+  position: relative;
+  color: var(--fg-muted);
+  text-decoration: none;
+  padding: 4px 2px;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-snug);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.lab-nav-link:hover,
+.lab-nav-link[aria-current="page"] {
+  color: var(--fg);
+}
+.lab-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 6px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 6' preserveAspectRatio='none'><path d='M2 4 Q 12 1 22 3.5 T 42 3 T 62 3.5 T 78 3' stroke='%23A8E10C' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+  background-position: left center;
+  transition: background-size var(--duration-base) var(--ease-out);
+}
+.lab-nav-link:hover::after,
+.lab-nav-link[aria-current="page"]::after {
+  background-size: 100% 100%;
+}
+
+/* 3. The "hover orchestration" card — lift + image saturate + arrow nudge.
+      All three together. The signature card hover. */
+.lab-card-orchestrated {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  transition: transform var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out),
+              border-color var(--duration-base) var(--ease-out);
+}
+.lab-card-orchestrated:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+.lab-card-orchestrated img,
+.lab-card-orchestrated .lab-image,
+.lab-card-orchestrated .lab-image > img {
+  filter: var(--image-filter-default);
+  transition: filter 400ms var(--ease-out);
+}
+@media (hover: hover) {
+  .lab-card-orchestrated:hover img,
+  .lab-card-orchestrated:hover .lab-image,
+  .lab-card-orchestrated:hover .lab-image > img {
+    filter: var(--image-filter-active);
+  }
+}
+.lab-card-orchestrated .lab-arrow {
+  display: inline-block;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.lab-card-orchestrated:hover .lab-arrow {
+  transform: translateX(2px);
+}
+
+/* 4. Toggle/switch knob — lime fill when on, smooth transition. */
+.lab-switch {
+  --switch-w: 36px;
+  --switch-h: 20px;
+  width: var(--switch-w);
+  height: var(--switch-h);
+  border-radius: 999px;
+  background: var(--ink-200);
+  position: relative;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  transition: background var(--duration-base) var(--ease-in-out);
+}
+[data-theme="dark"] .lab-switch { background: var(--ink-600); }
+.lab-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(var(--switch-h) - 4px);
+  height: calc(var(--switch-h) - 4px);
+  border-radius: 999px;
+  background: var(--ink-0);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-base) var(--ease-in-out);
+}
+.lab-switch[aria-pressed="true"] {
+  background: var(--lime-400);
+}
+.lab-switch[aria-pressed="true"]::after {
+  transform: translateX(calc(var(--switch-w) - var(--switch-h)));
+}
+
+/* 5. Toast slide-in (signature spring overshoot, single-use playful exception) */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(-3px) scale(1.01); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toast-out {
+  to { opacity: 0; transform: translateY(20px) scale(0.96); }
+}
+.lab-toast {
+  animation: toast-in 400ms var(--ease-spring) both;
+}
+.lab-toast.is-leaving {
+  animation: toast-out 200ms var(--ease-out) both;
+}
+
+/* 6. Input focus glow — lime ring fades in on focus instead of jumping. */
+.lab-input {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--fg);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+.lab-input:focus {
+  outline: none;
+  border-color: var(--lime-400);
+  box-shadow: 0 0 0 3px rgba(168, 225, 12, 0.18);
+}
+.lab-input::placeholder { color: var(--fg-subtle); }

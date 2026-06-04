@@ -1,0 +1,2487 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Felix triages Slack. So your engineers can build.">
+<title>felix · the slack triage bot</title>
+<link rel="icon" type="image/png" href="assets/felix-mascot.png">
+<link rel="stylesheet" href="./tokens.css">
+<link rel="stylesheet" href="./felix.css">
+<style>
+/* ============================================================
+   Felix landing page — inline styles
+   Everything component-specific lives here; tokens come from tokens.css,
+   sub-brand overrides come from felix.css.
+   ============================================================ */
+
+html { scroll-behavior: smooth; }
+body { overflow-x: hidden; }
+
+/* ─── Layout ───────────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: var(--container-xl);
+  margin: 0 auto;
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
+}
+.container-narrow {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
+}
+section {
+  padding-top: var(--space-9);
+  padding-bottom: var(--space-9);
+  position: relative;
+}
+@media (max-width: 768px) {
+  section { padding-top: var(--space-8); padding-bottom: var(--space-8); }
+}
+
+/* ─── Eyebrow + section heading patterns ───────────────────── */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-muted);
+  letter-spacing: var(--tracking-mono);
+  text-transform: lowercase;
+  margin: 0 0 var(--space-4) 0;
+}
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--fg);
+  margin: 0 0 var(--space-5) 0;
+  max-width: 24ch;
+}
+.section-heading em {
+  font-family: var(--font-italic-display);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.section-lead {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--fg-muted);
+  line-height: var(--leading-relaxed);
+  max-width: 64ch;
+  margin: 0 0 var(--space-7) 0;
+}
+.section-lead + .section-lead { margin-top: calc(-1 * var(--space-5)); }
+
+/* ─── Curtain — agent message + Felix typewriter ───────────── */
+.felix-curtain {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--ink-800);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-5);
+  animation: curtain-fade-out 300ms var(--ease-out) 3900ms forwards;
+}
+.felix-curtain-thread {
+  display: flex; flex-direction: column;
+  max-width: 500px; width: 100%;
+}
+.curtain-msg-header {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-family: var(--font-sans); font-size: var(--text-sm);
+  margin-bottom: var(--space-2);
+}
+
+/* Shared card surface for both messages */
+.curtain-message {
+  background: linear-gradient(180deg, var(--ink-700) 0%, var(--ink-800) 100%);
+  border: 1px solid var(--ink-600);
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  max-width: 560px;
+  margin: 0 auto 12px;
+  width: 100%;
+}
+.curtain-message:last-child { margin-bottom: 0; }
+.curtain-message-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.curtain-message-body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink-200);
+}
+/* Felix-specific VT323 override at confident size, correct line-height */
+.curtain-message--felix .curtain-message-body {
+  font-family: var(--font-pixel);
+  font-size: 1.75rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--rust-400);
+}
+
+/* Agent message — fades in first */
+.curtain-agent-msg {
+  opacity: 0;
+  animation: agent-msg-in 300ms var(--ease-out) forwards;
+}
+@keyframes agent-msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.agent-avatar {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-md);
+  background: var(--lavender-400);
+  color: var(--ink-25);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.agent-name { color: var(--ink-100); font-weight: 500; font-size: var(--text-sm); }
+.agent-time { color: var(--ink-400); font-size: var(--text-xs); margin-left: auto; font-family: var(--font-mono); }
+.agent-text {
+  margin: 0;
+  color: var(--ink-100);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  padding-left: 40px;
+}
+
+/* Felix bubble — appears 1200ms later (card surface comes from .curtain-message) */
+.felix-curtain-bubble {
+  opacity: 0;
+  animation: felix-bubble-in 300ms var(--ease-out) 1200ms forwards;
+}
+@keyframes felix-bubble-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.felix-avatar { width: 24px; height: 24px; image-rendering: pixelated; }
+.felix-name { color: var(--ink-100); font-weight: 500; }
+.felix-tag {
+  padding: 1px 5px;
+  font-family: var(--font-mono); font-size: 9px;
+  background: var(--rust-400); color: var(--ink-25);
+  border-radius: var(--radius-xs);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.felix-time {
+  color: var(--ink-400);
+  font-size: var(--text-xs);
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+.felix-curtain-body {
+  min-height: 32px;
+  display: flex; align-items: center; gap: var(--space-3);
+}
+.felix-curtain-dots {
+  display: inline-flex; gap: 4px;
+  opacity: 1;
+  transition: opacity 200ms var(--ease-out);
+}
+.felix-curtain-dots.hide { opacity: 0; }
+.felix-curtain-dots span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-300);
+  animation: curtain-dot-bounce 1s var(--ease-in-out) infinite;
+}
+.felix-curtain-dots span:nth-child(2) { animation-delay: 0.15s; }
+.felix-curtain-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes curtain-dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+.felix-curtain-text {
+  font-family: var(--font-pixel);
+  font-size: 1.75rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--rust-400);
+  text-shadow: 0 0 16px rgba(214, 105, 47, 0.45);
+}
+@keyframes curtain-fade-out {
+  to { opacity: 0; visibility: hidden; pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .felix-curtain { display: none !important; }
+}
+
+/* ─── Top nav — glassmorphic surface ──────────────────────── */
+.felix-top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px clamp(16px, 4vw, 48px);
+  z-index: var(--z-overlay);
+  background: rgba(24, 24, 21, 0.6);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.2);
+  transition: background var(--duration-base) var(--ease-out),
+              backdrop-filter var(--duration-base) var(--ease-out);
+}
+.felix-top-nav.scrolled {
+  background: rgba(24, 24, 21, 0.75);
+  backdrop-filter: blur(28px) saturate(1.3);
+  -webkit-backdrop-filter: blur(28px) saturate(1.3);
+}
+
+.nav-brand {
+  display: inline-flex; align-items: center; gap: 8px;
+  text-decoration: none; color: var(--fg);
+}
+.nav-brand img { width: 24px; height: 24px; image-rendering: pixelated; }
+.nav-brand-name {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-100);
+  letter-spacing: var(--tracking-mono);
+}
+.nav-version {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xs);
+  color: var(--rust-300);
+  background: rgba(214, 105, 47, 0.14);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  letter-spacing: var(--tracking-mono);
+}
+
+.nav-links {
+  display: flex; gap: var(--space-5);
+}
+.nav-link {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink-300);
+  text-decoration: none;
+  letter-spacing: var(--tracking-snug);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.nav-link:hover { color: var(--rust-400); }
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-100);
+  background: linear-gradient(180deg, #DD7438 0%, #C95E25 100%);
+  border: 1px solid #B85420;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 200ms ease-out,
+              box-shadow 200ms ease-out,
+              background 200ms ease-out;
+}
+.nav-cta:hover {
+  background: linear-gradient(180deg, #E07B3F 0%, #CF652B 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+    0 4px 12px rgba(214, 105, 47, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.nav-cta:active {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.2) inset,
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.nav-cta span[aria-hidden="true"] {
+  transition: transform 200ms ease-out;
+  display: inline-block;
+}
+.nav-cta:hover span[aria-hidden="true"] {
+  transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+  .felix-top-nav { padding: 12px 16px; }
+  .nav-links { display: none; }
+  .nav-version { display: none; }
+  .nav-cta { padding: 8px 14px; font-size: 13px; }
+}
+
+/* ─── Hero ─────────────────────────────────────────────────── */
+.hero {
+  padding-top: calc(var(--space-10) + 80px);
+  padding-bottom: var(--space-10);
+  position: relative;
+  background: var(--ink-800);
+  isolation: isolate;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+/* Film-grain noise overlay */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  pointer-events: none;
+}
+/* Faint rust-orange ambient glow behind the Slack mockup */
+.hero::after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  right: -10%;
+  width: 700px;
+  height: 700px;
+  z-index: -1;
+  background: radial-gradient(circle, rgba(214, 105, 47, 0.18), transparent 65%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: center;
+}
+@media (max-width: 1024px) {
+  .hero-grid { grid-template-columns: 1fr; gap: var(--space-7); }
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink-100);
+  max-width: 18ch;
+  margin: 0 0 var(--space-5) 0;
+}
+.hero-title em {
+  font-family: var(--font-italic-display);
+  font-style: italic;
+  font-weight: 400;
+  font-feature-settings: "ss01" 1;
+}
+.hero-sub {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--ink-300);
+  line-height: 1.55;
+  max-width: 52ch;
+  margin: 0 0 var(--space-6) 0;
+}
+.hero-anchor {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-muted);
+  text-decoration: none;
+  letter-spacing: var(--tracking-mono);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.hero-anchor .anchor-arrow {
+  display: inline-block;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.hero-anchor:hover { color: var(--rust-400); }
+.hero-anchor:hover .anchor-arrow { transform: translateY(2px); }
+
+/* Cursor follower */
+.felix-cursor {
+  position: fixed;
+  width: 8px; height: 8px;
+  background: var(--rust-400);
+  pointer-events: none;
+  z-index: var(--z-overlay);
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+  will-change: transform;
+}
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .felix-cursor { display: none; }
+}
+
+/* ─── Slack mockup (reused across hero + scenarios) ────────── */
+.slack-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: transform var(--duration-slow) var(--ease-out),
+              box-shadow var(--duration-slow) var(--ease-out);
+}
+.hero .slack-card {
+  transform: rotate(-1.5deg);
+}
+.hero .slack-card:hover {
+  transform: rotate(0deg);
+  box-shadow: var(--shadow-lg);
+}
+.slack-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--fg);
+}
+.slack-header .channel { display: flex; align-items: center; gap: 6px; }
+.slack-header .meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xs);
+  color: var(--fg-muted);
+  letter-spacing: var(--tracking-mono);
+}
+.slack-body { padding: var(--space-4) var(--space-5); display: flex; flex-direction: column; gap: var(--space-5); }
+.slack-msg { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: flex-start; }
+.slack-avatar {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-2xs);
+  color: var(--ink-25);
+  letter-spacing: var(--tracking-snug);
+}
+.slack-avatar.felix-avatar {
+  background: var(--ink-800);
+  padding: 4px;
+}
+.slack-avatar.felix-avatar img { width: 100%; height: 100%; image-rendering: pixelated; }
+.slack-avatar.agent-rp { background: var(--lavender-500); }
+.slack-msg-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-size: var(--text-xs);
+}
+.slack-name {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: var(--weight-medium);
+  color: var(--fg);
+}
+.slack-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-subtle);
+  letter-spacing: var(--tracking-mono);
+}
+.slack-app-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 1px 4px;
+  background: rgba(214,105,47,0.18);
+  color: var(--rust-300);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+}
+.slack-msg-body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: var(--leading-relaxed);
+  color: var(--fg);
+}
+.slack-msg-body.felix-voice {
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+.slack-reactions {
+  margin-top: 6px;
+  display: flex; gap: 6px;
+}
+.slack-reaction {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+.slack-caption {
+  margin-top: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-3xs);
+  color: var(--fg-subtle);
+  letter-spacing: var(--tracking-mono);
+  text-align: center;
+}
+
+/* ─── Problem cards (§2) ───────────────────────────────────── */
+.problem-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+  margin-top: var(--space-7);
+}
+@media (max-width: 768px) {
+  .problem-cards { grid-template-columns: 1fr; }
+}
+.problem-card {
+  padding: var(--space-5);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-brutal-sm);
+  transition: transform var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out);
+}
+.problem-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-brutal-md);
+}
+.problem-card h3 {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-xl);
+  color: var(--fg);
+  margin: 0 0 var(--space-3) 0;
+  line-height: var(--leading-snug);
+}
+.problem-card p {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+/* Before/after mini diagram */
+.before-after {
+  margin-top: var(--space-8);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+  max-width: 720px;
+}
+@media (max-width: 640px) {
+  .before-after { grid-template-columns: 1fr; }
+}
+.ba-block {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+.ba-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xs);
+  color: var(--fg-muted);
+  letter-spacing: var(--tracking-mono);
+  text-transform: lowercase;
+  margin-bottom: var(--space-3);
+}
+.ba-svg { width: 100%; height: auto; display: block; }
+
+/* ─── §3 Paths grid (merged triage + scenarios) ───────────── */
+.paths-section {
+  padding: 120px 0;
+}
+.section-headline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink-100);
+  margin: 0 0 var(--space-5) 0;
+  max-width: 28ch;
+}
+.section-headline em {
+  font-family: var(--font-italic-display);
+  font-style: italic;
+  font-weight: 400;
+}
+.section-intro {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--ink-300);
+  line-height: 1.55;
+  max-width: 64ch;
+  margin: 0 0 var(--space-7) 0;
+}
+.paths-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 64px;
+}
+.path-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--ink-700) 0%, var(--ink-800) 100%);
+  border: 1px solid var(--ink-600);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+.path-stripe {
+  height: 3px;
+  width: 100%;
+}
+.path-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--ink-600);
+}
+.path-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-300);
+  margin-bottom: 16px;
+}
+.path-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.path-headline {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--ink-100);
+  font-weight: 600;
+  margin: 0;
+}
+.path-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--ink-700);
+  align-items: baseline;
+}
+.path-row:last-child {
+  border-bottom: none;
+}
+.path-key {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--rust-400);
+  letter-spacing: 0.02em;
+}
+.path-card[data-path="b"] .path-key { color: var(--lavender-400); }
+.path-card[data-path="c"] .path-key { color: var(--rust-500); }
+.path-value {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-200);
+}
+.path-example {
+  padding: 16px 24px;
+  background: var(--ink-800);
+  border-top: 1px solid var(--ink-700);
+  border-bottom: 1px solid var(--ink-700);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-300);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.example-msg .example-author {
+  color: var(--ink-100);
+  font-weight: 600;
+}
+.example-felix .example-author {
+  color: var(--rust-400);
+}
+.path-outcome {
+  background: var(--ink-800);
+}
+@media (max-width: 1024px) {
+  .paths-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* ─── Architecture diagram (§4) — scoped canvas component ──── */
+.architecture-section {
+  margin: var(--space-7) 0;
+}
+.architecture-section .arch-wrap {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  aspect-ratio: 1400 / 880;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+}
+.architecture-section .canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1400px;
+  height: 880px;
+  background: #181815;
+  background-image: radial-gradient(circle, rgba(60, 58, 50, 0.7) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+  overflow: hidden;
+  color: #EAE8E1;
+  font-family: var(--font-sans);
+  transform-origin: top left;
+  /* scale value set by JS — see archFit() in <script> below */
+  transform: scale(1);
+}
+.architecture-section .grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 20;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode: overlay;
+}
+.architecture-section .felix-aura {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 400px;
+  background: radial-gradient(ellipse at center, rgba(214, 105, 47, 0.22) 0%, rgba(214, 105, 47, 0.08) 35%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 1;
+  animation: archAuraPulse 4s ease-in-out infinite;
+}
+@keyframes archAuraPulse {
+  0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+}
+.architecture-section .connectors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.architecture-section .connector {
+  fill: none;
+  stroke: #5F5C53;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+  animation: archFlow 2.8s linear infinite;
+  opacity: 0.85;
+}
+@keyframes archFlow { to { stroke-dashoffset: -30; } }
+.architecture-section .arch-card {
+  position: absolute;
+  background: linear-gradient(180deg, #2A2924 0%, #25241F 100%);
+  border: 1px solid #36352F;
+  border-radius: 12px;
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.55),
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  padding: 20px 22px;
+  z-index: 5;
+}
+.architecture-section .arch-card-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: #EAE8E1;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.architecture-section .arch-card-title::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  background: #D6692F;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(214, 105, 47, 0.7);
+}
+.architecture-section .arch-card-subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #807C72;
+  letter-spacing: 0.02em;
+}
+.architecture-section .arch-card-divider {
+  height: 1px;
+  background: linear-gradient(90deg, #36352F 0%, #36352F 70%, transparent 100%);
+  margin: 14px 0;
+}
+.architecture-section .nw-cluster {
+  position: absolute;
+  top: 80px;
+  left: 80px;
+  width: 340px;
+  z-index: 5;
+}
+.architecture-section .arch-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #807C72;
+  letter-spacing: 0.04em;
+  margin-bottom: 16px;
+}
+.architecture-section .msg-bubble {
+  background: linear-gradient(180deg, #2A2924 0%, #25241F 100%);
+  border: 1px solid #36352F;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 12px;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  margin-bottom: 14px;
+  transform: rotate(-1deg);
+}
+.architecture-section .msg-bubble + .msg-bubble {
+  margin-left: 28px;
+  transform: rotate(0.8deg);
+}
+.architecture-section .msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: #181815;
+  flex-shrink: 0;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset;
+}
+.architecture-section .msg-avatar.alex  { background: #7BA88B; }
+.architecture-section .msg-avatar.maria { background: #C68A6B; }
+.architecture-section .msg-content { flex: 1; min-width: 0; }
+.architecture-section .msg-header {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.architecture-section .msg-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #EAE8E1;
+}
+.architecture-section .msg-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #4F4D47;
+}
+.architecture-section .msg-body {
+  font-size: 12px;
+  color: #D4D1C7;
+  line-height: 1.4;
+}
+.architecture-section .ne-card {
+  top: 80px;
+  right: 80px;
+  width: 300px;
+}
+.architecture-section .scatter-container {
+  background: #1C1B17;
+  border: 1px solid #2A2924;
+  border-radius: 6px;
+  padding: 14px;
+  margin: 14px 0 12px;
+}
+.architecture-section .legend {
+  display: flex;
+  gap: 18px;
+}
+.architecture-section .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #807C72;
+}
+.architecture-section .legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.architecture-section .legend-dot.query {
+  background: #EAE8E1;
+  border: 1.5px solid #D6692F;
+  width: 5px;
+  height: 5px;
+}
+.architecture-section .legend-dot.match  { background: #D6692F; box-shadow: 0 0 6px rgba(214, 105, 47, 0.6); }
+.architecture-section .legend-dot.vector { background: #5F5C53; }
+.architecture-section .match-dot { animation: archMatchPulse 2.2s ease-in-out infinite; }
+@keyframes archMatchPulse {
+  0%, 100% { opacity: 1; r: 3.5; }
+  50%      { opacity: 0.75; r: 4.2; }
+}
+.architecture-section .felix-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  padding: 24px 28px;
+  background: linear-gradient(180deg, #2A2924 0%, #25241F 100%);
+  border: 1.5px solid rgba(214, 105, 47, 0.55);
+  border-radius: 14px;
+  animation: archFelixPulse 4s ease-in-out infinite;
+  z-index: 6;
+}
+@keyframes archFelixPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 60px rgba(214, 105, 47, 0.18),
+      0 0 30px rgba(214, 105, 47, 0.12),
+      0 14px 44px rgba(0, 0, 0, 0.65),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    border-color: rgba(214, 105, 47, 0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 100px rgba(214, 105, 47, 0.28),
+      0 0 50px rgba(214, 105, 47, 0.18),
+      0 14px 44px rgba(0, 0, 0, 0.65),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    border-color: rgba(214, 105, 47, 0.8);
+  }
+}
+.architecture-section .felix-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.architecture-section .felix-arch-mascot {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 6px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+.architecture-section .felix-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #EAE8E1;
+}
+.architecture-section .felix-app-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 7px;
+  background: #D6692F;
+  color: #EAE8E1;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.15) inset;
+}
+.architecture-section .felix-time {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #807C72;
+}
+.architecture-section .felix-body {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  line-height: 1.15;
+  color: #EAE8E1;
+  letter-spacing: 0.01em;
+  margin-top: 16px;
+}
+.architecture-section .felix-meta {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1.2;
+  color: #807C72;
+  margin-top: 14px;
+}
+.architecture-section .felix-meta + .felix-meta { margin-top: 8px; }
+.architecture-section .sw-card {
+  bottom: 80px;
+  left: 80px;
+  width: 340px;
+  top: auto;
+  right: auto;
+}
+.architecture-section .data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.architecture-section .data-table thead th {
+  text-align: left;
+  padding: 0 0 8px;
+  color: #4F4D47;
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #36352F;
+}
+.architecture-section .data-table tbody td {
+  padding: 7px 0;
+  color: #D4D1C7;
+}
+.architecture-section .data-table tbody tr.highlighted td {
+  background: rgba(214, 105, 47, 0.14);
+  color: #EAE8E1;
+  box-shadow: 0 0 0 1px rgba(214, 105, 47, 0.25) inset;
+}
+.architecture-section .data-table tbody tr.highlighted td:first-child {
+  border-radius: 4px 0 0 4px;
+  padding-left: 8px;
+}
+.architecture-section .data-table tbody tr.highlighted td:last-child {
+  border-radius: 0 4px 4px 0;
+  padding-right: 8px;
+}
+.architecture-section .se-card {
+  bottom: 80px;
+  right: 80px;
+  width: 340px;
+  top: auto;
+  left: auto;
+}
+.architecture-section .waveform {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  margin: 14px 0 12px;
+  padding: 8px 12px;
+  background: #1C1B17;
+  border: 1px solid #2A2924;
+  border-radius: 6px;
+}
+.architecture-section .wave-bar {
+  width: 3px;
+  background: #D6692F;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+.architecture-section .groq-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.architecture-section .groq-label {
+  font-size: 12px;
+  color: #D4D1C7;
+}
+.architecture-section .groq-time {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: #D6692F;
+}
+.architecture-section .groq-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #D6692F;
+  margin-left: auto;
+  box-shadow: 0 0 10px rgba(214, 105, 47, 0.7);
+  animation: archStatusPulse 1.8s ease-in-out infinite;
+}
+@keyframes archStatusPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+.architecture-section .floating-label {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #4F4D47;
+  letter-spacing: 0.04em;
+  z-index: 4;
+  opacity: 0.85;
+}
+.architecture-section .label-1 { top: 360px; left: 280px; }
+.architecture-section .label-2 { top: 360px; right: 280px; }
+.architecture-section .label-3 { bottom: 320px; left: 380px; }
+.architecture-section .arch-caption {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #5F5C53;
+  letter-spacing: 0.04em;
+  z-index: 5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .architecture-section .felix-card,
+  .architecture-section .felix-aura,
+  .architecture-section .connector,
+  .architecture-section .groq-status,
+  .architecture-section .match-dot {
+    animation: none;
+  }
+}
+
+.tech-pills {
+  margin-top: var(--space-6);
+  display: flex; flex-wrap: wrap; gap: var(--space-3);
+  justify-content: center;
+}
+.tech-pill {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-muted);
+  letter-spacing: var(--tracking-mono);
+}
+
+/* ─── KB grid (§6) ─────────────────────────────────────────── */
+.kb-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: var(--space-6);
+  max-width: 760px;
+}
+@media (max-width: 640px) {
+  .kb-grid { grid-template-columns: 1fr; }
+}
+.kb-item {
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-elevated);
+  display: flex; align-items: baseline; gap: 12px;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.kb-item:hover { background: var(--bg-sunken); }
+.kb-sec {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--rust-400);
+  letter-spacing: var(--tracking-mono);
+  min-width: 36px;
+}
+.kb-name {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--fg);
+}
+
+/* ─── Similarity threshold scale ───────────────────────────── */
+.similarity-section {
+  padding: 120px 0;
+}
+.similarity-scale {
+  position: relative;
+  margin: 80px auto 24px;
+  max-width: 900px;
+  height: 240px;
+}
+.example-markers {
+  position: relative;
+  height: 120px;
+}
+.example-marker {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.example-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 12px currentColor;
+}
+.example-label {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.example-query {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-300);
+}
+.example-score {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-100);
+}
+.scale-track {
+  position: relative;
+  display: flex;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+.zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink-100);
+  position: relative;
+}
+.zone-escalate { background: var(--rust-500); }
+.zone-ask { background: var(--lavender-400); color: var(--ink-800); }
+.zone-resolve { background: var(--rust-400); }
+.threshold-tick {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.threshold-line {
+  width: 1px;
+  flex: 1;
+  background: var(--ink-100);
+}
+.threshold-label {
+  position: absolute;
+  bottom: -32px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-300);
+  white-space: nowrap;
+}
+.scale-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-400);
+}
+.similarity-caption {
+  text-align: center;
+  margin-top: 64px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-400);
+}
+@media (max-width: 640px) {
+  .similarity-scale { margin: 64px auto 24px; }
+  .example-query { font-size: 9px; }
+}
+
+/* ─── Roadmap (§7) ─────────────────────────────────────────── */
+.roadmap-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-5);
+  margin-top: var(--space-7);
+}
+@media (max-width: 1024px) { .roadmap-timeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .roadmap-timeline { grid-template-columns: 1fr; } }
+
+.milestone {
+  padding: var(--space-5);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; gap: var(--space-3);
+  transition: transform var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out);
+}
+.milestone:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.milestone[data-status="shipped"] { border-color: var(--rust-400); border-width: 2px; }
+.milestone[data-status="next"] { border-color: var(--rust-400); border-width: 2px; }
+.milestone[data-status="soon"] { border: 1px dashed var(--border-strong); }
+.milestone[data-status="later"] { border: 1px dashed var(--border); opacity: 0.78; }
+.milestone[data-status="later"] .ms-version,
+.milestone[data-status="later"] .ms-bullets { color: var(--fg-muted); }
+
+.ms-head {
+  display: flex; align-items: center; gap: 8px;
+}
+.ms-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-3xs);
+  letter-spacing: var(--tracking-mono);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+}
+.milestone[data-status="shipped"] .ms-tag { color: var(--rust-300); background: rgba(214,105,47,0.12); }
+.milestone[data-status="next"] .ms-tag { color: var(--rust-300); background: rgba(214,105,47,0.12); }
+.lime-dot-pulse {
+  width: 8px; height: 8px;
+  background: var(--lime-400);
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-lime 1.8s var(--ease-in-out) infinite;
+  box-shadow: 0 0 0 0 rgba(168, 225, 12, 0.5);
+}
+.ms-version {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  letter-spacing: var(--tracking-mono);
+}
+.ms-desc {
+  font-family: var(--font-sans);
+  font-size: var(--text-2xs);
+  color: var(--fg-muted);
+  margin: -4px 0 0 0;
+}
+.ms-bullets {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.ms-bullets li {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  line-height: var(--leading-snug);
+  padding-left: 16px;
+  position: relative;
+}
+.ms-bullets li::before {
+  content: "·";
+  position: absolute; left: 4px; top: -1px;
+  color: var(--rust-400);
+  font-weight: bold;
+}
+
+/* ─── Behind the scenes (§8) ───────────────────────────────── */
+.credits-head {
+  display: flex; align-items: center; gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.credits-head img { width: 24px; height: 24px; image-rendering: pixelated; }
+.credits-links {
+  margin-top: var(--space-5);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+  font-style: italic;
+}
+.credits-links a {
+  color: var(--fg-muted);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--border-strong);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.credits-links a:hover { color: var(--rust-400); }
+
+/* ─── FAQ (§9) ─────────────────────────────────────────────── */
+.faq-wrap { max-width: 760px; margin-top: var(--space-6); }
+details {
+  border-top: 1px solid var(--border);
+  padding: var(--space-4) 0;
+}
+details:last-of-type { border-bottom: 1px solid var(--border); }
+summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-lg);
+  color: var(--fg);
+  gap: var(--space-4);
+}
+summary::-webkit-details-marker { display: none; }
+summary::after {
+  content: "+";
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  color: var(--rust-400);
+  transition: transform var(--duration-base) var(--ease-out);
+  flex-shrink: 0;
+}
+details[open] summary::after { content: "−"; }
+details > div, details > p {
+  margin-top: var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--fg-muted);
+  line-height: var(--leading-relaxed);
+}
+details > div .placeholder {
+  font-style: italic;
+  color: var(--fg-subtle);
+}
+
+/* ─── Quiet transition into Working Together ──────────────── */
+.working-together-intro {
+  text-align: center;
+  padding: var(--space-7) 0 var(--space-3);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.working-together-intro p {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-muted);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  margin: 0;
+}
+
+/* ─── §10 Working together — brutalist showpiece ──────────── */
+.working-together {
+  position: relative;
+  padding: var(--space-9) 0;
+  isolation: isolate;
+  overflow: hidden;
+}
+.working-together-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: url('./refs/working-together-bg.png');
+  background-size: cover;
+  background-position: center left;
+  filter: blur(3px) grayscale(0.95) brightness(0.45) contrast(0.9);
+}
+.working-together-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(24, 24, 21, 0.5) 0%,
+    rgba(24, 24, 21, 0.75) 50%,
+    rgba(24, 24, 21, 0.9) 100%
+  );
+}
+.working-together-block {
+  background: var(--rust-400);
+  padding: var(--space-7) var(--space-8);
+  max-width: 720px;
+  margin-left: auto;
+  position: relative;
+  /* SHARP corners — no border-radius */
+  box-shadow: 12px 12px 0 rgba(0, 0, 0, 0.25);
+}
+.working-together-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-5);
+}
+.working-together-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--ink-900);
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+.working-together-mascot {
+  /* size controlled by .felix-mascot--full; this rule kept for layout context */
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+.working-together-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink-900);
+  margin: 0 0 var(--space-5);
+  max-width: 16ch;
+}
+[data-theme="dark"] .working-together-title { color: var(--ink-900); }
+.working-together-title em {
+  font-family: var(--font-italic-display);
+  font-style: italic;
+  font-weight: 400;
+}
+.working-together-body {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  line-height: 1.55;
+  color: var(--ink-900);
+  margin: 0 0 var(--space-6);
+  max-width: 52ch;
+}
+.working-together-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.working-together-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  color: var(--ink-900);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+}
+.working-together-link:hover {
+  opacity: 0.75;
+  transform: translateX(2px);
+}
+@media (max-width: 768px) {
+  .working-together-block {
+    margin-left: 0;
+    padding: var(--space-5);
+    box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.25);
+  }
+  .working-together-links { gap: var(--space-3); }
+}
+
+/* ─── Footer — minimal ─────────────────────────────────────── */
+.felix-footer {
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-8);
+}
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.footer-line {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-muted);
+  letter-spacing: var(--tracking-mono);
+}
+.shrey-lab-signature {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.shrey-lab-signature:hover { color: var(--fg); }
+.monogram-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--ink-800);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+[data-theme="dark"] .monogram-mark { background: var(--ink-700); }
+.monogram-mark em {
+  font-family: var(--font-italic-display);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-25);
+  font-weight: 500;
+  line-height: 1;
+}
+.monogram-mark .lime-dot {
+  position: absolute;
+  bottom: 3px;
+  right: 4px;
+  color: var(--lime-400);
+  font-size: 8px;
+  line-height: 1;
+}
+.monogram-text {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-mono);
+  text-transform: lowercase;
+}
+.monogram-text .lime-dot-tiny {
+  color: var(--lime-400);
+  font-weight: 700;
+}
+
+/* ─── Page-load fade for hero content (after curtain) ───────── */
+.reveal-stagger > * {
+  opacity: 0;
+  animation: fade-up 600ms var(--ease-out) both;
+  animation-delay: var(--reveal-delay, 3000ms);
+}
+.reveal-stagger > *:nth-child(1) { --reveal-delay: 3900ms; }
+.reveal-stagger > *:nth-child(2) { --reveal-delay: 3960ms; }
+.reveal-stagger > *:nth-child(3) { --reveal-delay: 4020ms; }
+.reveal-stagger > *:nth-child(4) { --reveal-delay: 4080ms; }
+.reveal-stagger > *:nth-child(5) { --reveal-delay: 4140ms; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-stagger > * { animation: none; opacity: 1; --reveal-delay: 0ms; }
+}
+
+/* ─── Smaller niceties ─────────────────────────────────────── */
+.note-caption {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xs);
+  color: var(--fg-subtle);
+  letter-spacing: var(--tracking-mono);
+  text-transform: lowercase;
+  margin-top: var(--space-3);
+}
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<!-- ────────── Curtain: agent message + Felix typewriter ────────── -->
+<div class="felix-curtain" id="felixCurtain" aria-hidden="true">
+  <div class="felix-curtain-thread">
+
+    <!-- Agent message -->
+    <div class="curtain-message curtain-agent-msg">
+      <div class="curtain-message-header curtain-msg-header">
+        <div class="agent-avatar">RP</div>
+        <span class="agent-name">Riya P.</span>
+        <span class="agent-time">just now</span>
+      </div>
+      <p class="curtain-message-body agent-text">CRM session timed out again</p>
+    </div>
+
+    <!-- Felix's response -->
+    <div class="curtain-message curtain-message--felix felix-curtain-bubble">
+      <div class="curtain-message-header curtain-msg-header">
+        <img src="assets/felix-mascot.png" alt="Felix" class="felix-mascot felix-mascot--avatar-sm felix-avatar">
+        <span class="felix-name">felix</span>
+        <span class="felix-tag">APP</span>
+        <span class="felix-time">just now</span>
+      </div>
+      <div class="curtain-message-body felix-curtain-body">
+        <span class="felix-curtain-dots" id="curtainDots">
+          <span></span><span></span><span></span>
+        </span>
+        <span class="felix-curtain-text" id="curtainText"></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ────────── Cursor follower (hero only) ────────── -->
+<div class="felix-cursor" id="felix-cursor" aria-hidden="true"></div>
+
+<!-- ────────── Editorial top nav ────────── -->
+<nav class="felix-top-nav" id="felix-nav" aria-label="Primary">
+  <a href="#hero" class="nav-brand">
+    <img src="assets/felix-mascot.png" alt="Felix" class="felix-mascot felix-mascot--nav">
+    <span class="nav-brand-name">felix</span>
+    <span class="nav-version">v1.9.2</span>
+  </a>
+  <div class="nav-links" role="list">
+    <a href="#paths" class="nav-link">paths</a>
+    <a href="#architecture" class="nav-link">architecture</a>
+    <a href="#kb" class="nav-link">kb</a>
+    <a href="#faq" class="nav-link">faq</a>
+    <a href="#working-together" class="nav-link">pricing</a>
+  </div>
+  <a href="#working-together" class="nav-cta">Get in touch <span aria-hidden="true">→</span></a>
+</nav>
+
+<main id="main">
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section id="hero" class="hero">
+  <div class="container">
+    <div class="hero-grid reveal-stagger">
+      <div>
+        <p class="eyebrow">// felix · v1.9.2</p>
+        <h1 class="hero-title">Felix <em>triages</em> Slack. So your engineers can build.</h1>
+        <p class="hero-sub">Reads every tech ticket. Resolves known issues from a curated knowledge base. Asks one focused question when unclear. Routes the rest with full context.</p>
+        <a href="#scenarios" class="hero-anchor">see felix in action <span class="anchor-arrow">↓</span></a>
+      </div>
+      <div>
+        <div class="slack-card" role="figure" aria-label="Stylized Slack thread showing Felix resolving a dialer issue">
+          <div class="slack-header">
+            <span class="channel">#tech-problems</span>
+            <span class="meta">10:42 AM</span>
+          </div>
+          <div class="slack-body">
+            <div class="slack-msg">
+              <div class="slack-avatar agent-rp">RP</div>
+              <div>
+                <div class="slack-msg-head">
+                  <span class="slack-name">Riya P.</span>
+                  <span class="slack-time">support · 10:42 AM</span>
+                </div>
+                <div class="slack-msg-body">Hi team, dialer is not ringing when I try to call international leads. Lead link: app.example.com/admin/leads/29948</div>
+              </div>
+            </div>
+            <div class="slack-msg">
+              <div class="slack-avatar felix-avatar"><img src="assets/felix-mascot.png" alt="Felix" class="felix-mascot felix-mascot--avatar"></div>
+              <div>
+                <div class="slack-msg-head">
+                  <span class="slack-name">felix</span>
+                  <span class="slack-app-tag">APP</span>
+                  <span class="slack-time">10:42 AM</span>
+                </div>
+                <div class="slack-msg-body felix-voice">Looks like the daily unanswered-call limit was hit for this lead.
+
+Try this:
+1. Open the lead page and check the "calls today" counter
+2. If it shows 6+ unanswered, the limit is correctly enforced — wait until tomorrow IST
+3. If it shows &lt;6 and you still can't call, ping QA on-call
+
+Source: KB §1 — Calling &amp; Dialer
+
+Worked? React 👍. Didn't work? Just say so and I'll route to @backend-team.</div>
+                <div class="slack-reactions">
+                  <span class="slack-reaction">👍 1</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="slack-caption">// stylized for clarity — actual felix output</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ §2 PROBLEM ═══════════════ -->
+<section id="problem">
+  <div class="container">
+    <p class="eyebrow">// the problem</p>
+    <h2 class="section-heading">Engineers were <em>drowning</em>. Support reps were waiting. Both deserved better.</h2>
+    <p class="section-lead">Before Felix, every tech blocker in your Slack support channel went straight to whoever was around. The same questions came back week after week — calling limits, CRM auth, dashboard timeouts — eating hours of engineering time on problems that were already solved.</p>
+    <p class="section-lead">Worse, when issues did need engineering, they landed on the wrong team, bounced around, and arrived stripped of context. Support reps waited. Engineers context-switched. Nothing moved.</p>
+
+    <div class="problem-cards">
+      <article class="problem-card">
+        <h3>Repetitive issues drain engineering time.</h3>
+        <p>The top 20 questions in #tech-problems are the same every week. Engineers were answering them by hand, one Slack thread at a time.</p>
+      </article>
+      <article class="problem-card">
+        <h3>Wrong-team routing wastes hours.</h3>
+        <p>An SMS bug pinging the CRM team, a dashboard issue routed to infra. Hours lost in handoff before anyone with the right context even sees it.</p>
+      </article>
+      <article class="problem-card">
+        <h3>Context evaporates on every escalation.</h3>
+        <p>By the time an engineer picks up the thread, half the relevant details are buried three scrolls up. Repro steps, lead IDs, error messages — all somewhere in the noise.</p>
+      </article>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ §3 THREE PATHS (merged with old §5) ═══════ -->
+<section id="paths" class="paths-section">
+  <div class="container">
+    <p class="eyebrow">// the three paths</p>
+    <h2 class="section-headline">
+      Felix doesn't try to be clever. Every triage decision lands in <em>one of three buckets.</em>
+    </h2>
+    <p class="section-intro">
+      The discipline is what makes it useful — support reps always know what to expect, and engineers always know what Felix has already tried.
+    </p>
+
+    <div class="paths-grid">
+      <!-- Path A: Resolve -->
+      <article class="path-card" data-path="a">
+        <div class="path-stripe" style="background: var(--rust-400);"></div>
+        <header class="path-header">
+          <span class="path-label">
+            <span class="path-dot" style="background: var(--rust-400);"></span>
+            Path A · Resolve
+          </span>
+          <h3 class="path-headline">Felix answers it himself.</h3>
+        </header>
+        <div class="path-row">
+          <span class="path-key">trigger:</span>
+          <span class="path-value">KB has a high-confidence match for the issue (similarity above 0.65).</span>
+        </div>
+        <div class="path-row">
+          <span class="path-key">behavior:</span>
+          <span class="path-value">Felix posts the resolution steps inline, cites the KB section, and asks the support rep to react with 👍 if it worked or 👎 if it didn't.</span>
+        </div>
+        <div class="path-example">
+          <div class="example-msg">
+            <span class="example-author">Riya P.:</span> CRM session timed out again
+          </div>
+          <div class="example-msg example-felix">
+            <span class="example-author">felix:</span> Looks like the session timeout. Try: incognito → log in fresh. Source: KB §4.
+          </div>
+        </div>
+        <div class="path-row path-outcome">
+          <span class="path-key">outcome:</span>
+          <span class="path-value">Support rep reacts. Decision logged to Supabase.</span>
+        </div>
+      </article>
+
+      <!-- Path B: Ask -->
+      <article class="path-card" data-path="b">
+        <div class="path-stripe" style="background: var(--lavender-400);"></div>
+        <header class="path-header">
+          <span class="path-label">
+            <span class="path-dot" style="background: var(--lavender-400);"></span>
+            Path B · Ask
+          </span>
+          <h3 class="path-headline">Felix needs one more thing.</h3>
+        </header>
+        <div class="path-row">
+          <span class="path-key">trigger:</span>
+          <span class="path-value">Likely match in KB, but the message is missing one specific piece of context to be certain.</span>
+        </div>
+        <div class="path-row">
+          <span class="path-key">behavior:</span>
+          <span class="path-value">Felix asks exactly one question. No interrogation, no "could you provide more info." One question, scoped to what would unlock the answer.</span>
+        </div>
+        <div class="path-example">
+          <div class="example-msg">
+            <span class="example-author">Alex M.:</span> Dialer is making weird noises
+          </div>
+          <div class="example-msg example-felix">
+            <span class="example-author">felix:</span> Is it static, echo, or no sound at all? That'll narrow it to either KB §1 or KB §3.
+          </div>
+        </div>
+        <div class="path-row path-outcome">
+          <span class="path-key">outcome:</span>
+          <span class="path-value">Support rep replies. Felix re-evaluates and either resolves or escalates.</span>
+        </div>
+      </article>
+
+      <!-- Path C: Escalate -->
+      <article class="path-card" data-path="c">
+        <div class="path-stripe" style="background: var(--rust-500);"></div>
+        <header class="path-header">
+          <span class="path-label">
+            <span class="path-dot" style="background: var(--rust-500);"></span>
+            Path C · Escalate
+          </span>
+          <h3 class="path-headline">Felix hands it off cleanly.</h3>
+        </header>
+        <div class="path-row">
+          <span class="path-key">trigger:</span>
+          <span class="path-value">No KB match, or message indicates an incident (5xx errors, "down," "broken for everyone").</span>
+        </div>
+        <div class="path-row">
+          <span class="path-key">behavior:</span>
+          <span class="path-value">Felix routes to the right team with a one-line summary of what's known and what's missing. Then steps back from the thread.</span>
+        </div>
+        <div class="path-example">
+          <div class="example-msg">
+            <span class="example-author">Sam K.:</span> Homepage broken on iOS Safari
+          </div>
+          <div class="example-msg example-felix">
+            <span class="example-author">felix:</span> No KB match. Routing to @frontend-team — reported by Sam K., iOS Safari, homepage scope.
+          </div>
+        </div>
+        <div class="path-row path-outcome">
+          <span class="path-key">outcome:</span>
+          <span class="path-value">Frontend team takes over with full context. Felix exits.</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ §4 ARCHITECTURE ═══════════════ -->
+<section id="architecture">
+  <div class="container">
+    <p class="eyebrow">// the stack</p>
+    <h2 class="section-heading">Built on a small, <em>deliberate</em> stack.</h2>
+    <p class="section-lead">Felix is not a black box. The pipeline is short, the dependencies are few, and every part is something we can reason about in an afternoon.</p>
+
+    <div class="architecture-section">
+      <div class="arch-wrap" role="img"
+           aria-label="Felix architecture: incoming Slack messages flow into Felix at the center, which queries an embeddings retrieval layer, a Supabase logs database, and Groq's Llama 3.3 70B to generate responses.">
+        <div class="canvas">
+
+          <!-- AMBIENT WASH behind felix -->
+          <div class="felix-aura"></div>
+
+          <!-- CONNECTORS -->
+          <svg class="connectors" viewBox="0 0 1400 880" preserveAspectRatio="none">
+            <path class="connector" d="M 380 240 C 440 290, 480 340, 510 400"/>
+            <path class="connector" d="M 1020 250 C 950 300, 920 350, 890 400"/>
+            <path class="connector" d="M 400 660 C 450 600, 480 550, 510 510"/>
+            <path class="connector" d="M 1000 660 C 940 600, 920 550, 890 510"/>
+          </svg>
+
+          <!-- NW · AGENT MESSAGES -->
+          <div class="nw-cluster">
+            <div class="arch-eyebrow">// incoming · #tech-problems</div>
+            <div class="msg-bubble">
+              <div class="msg-avatar alex">AL</div>
+              <div class="msg-content">
+                <div class="msg-header">
+                  <span class="msg-name">Alex</span>
+                  <span class="msg-time">10:42 AM</span>
+                </div>
+                <div class="msg-body">CRM session timed out again</div>
+              </div>
+            </div>
+            <div class="msg-bubble">
+              <div class="msg-avatar maria">MA</div>
+              <div class="msg-content">
+                <div class="msg-header">
+                  <span class="msg-name">Maria</span>
+                  <span class="msg-time">10:43 AM</span>
+                </div>
+                <div class="msg-body">Who is on call for this?</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NE · EMBEDDINGS -->
+          <div class="arch-card ne-card">
+            <div class="arch-card-title">embeddings retrieval</div>
+            <div class="arch-card-subtitle">BGE embeddings · 384-dim</div>
+            <div class="scatter-container">
+              <svg viewBox="0 0 240 110" width="100%" height="110">
+                <line x1="0" y1="55" x2="240" y2="55" stroke="#2F2E29" stroke-width="0.5" stroke-dasharray="2,3"/>
+                <line x1="120" y1="0" x2="120" y2="110" stroke="#2F2E29" stroke-width="0.5" stroke-dasharray="2,3"/>
+                <g fill="#5F5C53">
+                  <circle cx="20"  cy="32" r="2.4" opacity="0.8"/>
+                  <circle cx="42"  cy="68" r="2.4" opacity="0.6"/>
+                  <circle cx="58"  cy="22" r="2.4" opacity="0.7"/>
+                  <circle cx="85"  cy="88" r="2.4" opacity="0.5"/>
+                  <circle cx="100" cy="42" r="2.4" opacity="0.9"/>
+                  <circle cx="148" cy="80" r="2.4" opacity="0.7"/>
+                  <circle cx="172" cy="28" r="2.4" opacity="0.6"/>
+                  <circle cx="186" cy="62" r="2.4" opacity="0.8"/>
+                  <circle cx="205" cy="84" r="2.4" opacity="0.5"/>
+                  <circle cx="222" cy="36" r="2.4" opacity="0.7"/>
+                  <circle cx="35"  cy="98" r="2.4" opacity="0.6"/>
+                  <circle cx="72"  cy="48" r="2.4" opacity="0.5"/>
+                  <circle cx="155" cy="14" r="2.4" opacity="0.7"/>
+                  <circle cx="198" cy="98" r="2.4" opacity="0.5"/>
+                  <circle cx="92"  cy="74" r="2.4" opacity="0.6"/>
+                  <circle cx="165" cy="48" r="2.4" opacity="0.6"/>
+                </g>
+                <line x1="110" y1="55" x2="125" y2="46" stroke="#D6692F" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.7"/>
+                <line x1="110" y1="55" x2="142" y2="60" stroke="#D6692F" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.7"/>
+                <circle class="match-dot" cx="125" cy="46" r="3.5" fill="#D6692F"/>
+                <circle class="match-dot" cx="142" cy="60" r="3.5" fill="#D6692F" style="animation-delay: 0.6s"/>
+                <circle cx="110" cy="55" r="4" fill="#EAE8E1" stroke="#D6692F" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <div class="legend">
+              <div class="legend-item"><span class="legend-dot query"></span><span>Query</span></div>
+              <div class="legend-item"><span class="legend-dot match"></span><span>Match</span></div>
+              <div class="legend-item"><span class="legend-dot vector"></span><span>Vector</span></div>
+            </div>
+          </div>
+
+          <!-- CENTER · FELIX CARD -->
+          <div class="felix-card">
+            <div class="felix-header">
+              <img class="felix-mascot felix-arch-mascot" src="assets/felix-mascot.png" alt="Felix">
+              <span class="felix-name">felix</span>
+              <span class="felix-app-tag">APP</span>
+              <span class="felix-time">10:45 AM</span>
+            </div>
+            <div class="arch-card-divider"></div>
+            <div class="felix-body">
+              Looks like the session timed out.<br>
+              Try: incognito → log in fresh.
+            </div>
+            <div class="felix-meta">Source: KB §4 — CRM Authentication</div>
+            <div class="felix-meta">Worked? React 👍 to confirm.</div>
+          </div>
+
+          <!-- SW · SUPABASE LOGS -->
+          <div class="arch-card sw-card">
+            <div class="arch-card-title">Supabase logs</div>
+            <div class="arch-card-subtitle">triage history · last 4</div>
+            <div class="arch-card-divider"></div>
+            <table class="data-table">
+              <thead>
+                <tr><th>triage_id</th><th>path</th><th>outcome</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>TR-001</td><td>/auth/session</td><td>Resolve · 👍</td></tr>
+                <tr class="highlighted"><td>TR-002</td><td>/auth/session</td><td>Resolve · 👍</td></tr>
+                <tr><td>TR-003</td><td>/auth/session</td><td>Resolve · 👍</td></tr>
+                <tr><td>TR-004</td><td>/auth/session</td><td>Resolve · 👍</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SE · GROQ INFERENCE -->
+          <div class="arch-card se-card">
+            <div class="arch-card-title">Groq inference</div>
+            <div class="arch-card-subtitle">Groq · Llama 3.3 70B</div>
+            <div class="arch-card-divider"></div>
+            <div class="waveform">
+              <div class="wave-bar" style="height: 20px; opacity: 0.55"></div>
+              <div class="wave-bar" style="height: 30px; opacity: 0.7"></div>
+              <div class="wave-bar" style="height: 42px; opacity: 0.85"></div>
+              <div class="wave-bar" style="height: 50px;"></div>
+              <div class="wave-bar" style="height: 36px; opacity: 0.8"></div>
+              <div class="wave-bar" style="height: 22px; opacity: 0.55"></div>
+              <div class="wave-bar" style="height: 44px;"></div>
+              <div class="wave-bar" style="height: 30px; opacity: 0.7"></div>
+              <div class="wave-bar" style="height: 16px; opacity: 0.5"></div>
+              <div class="wave-bar" style="height: 40px; opacity: 0.85"></div>
+              <div class="wave-bar" style="height: 50px;"></div>
+              <div class="wave-bar" style="height: 32px; opacity: 0.7"></div>
+              <div class="wave-bar" style="height: 16px; opacity: 0.5"></div>
+              <div class="wave-bar" style="height: 44px;"></div>
+              <div class="wave-bar" style="height: 24px; opacity: 0.6"></div>
+              <div class="wave-bar" style="height: 36px; opacity: 0.85"></div>
+              <div class="wave-bar" style="height: 20px; opacity: 0.6"></div>
+              <div class="wave-bar" style="height: 48px;"></div>
+              <div class="wave-bar" style="height: 32px; opacity: 0.7"></div>
+              <div class="wave-bar" style="height: 16px; opacity: 0.5"></div>
+              <div class="wave-bar" style="height: 40px; opacity: 0.85"></div>
+              <div class="wave-bar" style="height: 24px; opacity: 0.6"></div>
+              <div class="wave-bar" style="height: 36px; opacity: 0.7"></div>
+              <div class="wave-bar" style="height: 20px; opacity: 0.55"></div>
+              <div class="wave-bar" style="height: 44px;"></div>
+              <div class="wave-bar" style="height: 28px; opacity: 0.6"></div>
+              <div class="wave-bar" style="height: 16px; opacity: 0.5"></div>
+              <div class="wave-bar" style="height: 32px; opacity: 0.7"></div>
+              <div class="wave-bar" style="height: 38px; opacity: 0.75"></div>
+              <div class="wave-bar" style="height: 24px; opacity: 0.6"></div>
+            </div>
+            <div class="groq-footer">
+              <span class="groq-label">response generated</span>
+              <span class="groq-time">1.8s</span>
+              <span class="groq-status"></span>
+            </div>
+          </div>
+
+          <!-- FLOATING METADATA -->
+          <div class="floating-label label-1">// threshold 0.65</div>
+          <div class="floating-label label-2">// confidence: high</div>
+          <div class="floating-label label-3">// path: A · Resolve</div>
+
+          <!-- CAPTION -->
+          <div class="arch-caption">// the stack — visualized</div>
+
+          <!-- FILM GRAIN -->
+          <div class="grain"></div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="tech-pills" aria-label="Tech stack">
+      <span class="tech-pill">Python 3.11</span>
+      <span class="tech-pill">Flask</span>
+      <span class="tech-pill">Groq</span>
+      <span class="tech-pill">Llama 3.3 70B</span>
+      <span class="tech-pill">fastembed + BAAI BGE-small</span>
+      <span class="tech-pill">Supabase</span>
+      <span class="tech-pill">Slack Bolt SDK</span>
+      <span class="tech-pill">AWS</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ §6 KNOWLEDGE BASE ═══════════════ -->
+<section id="kb">
+  <div class="container">
+    <p class="eyebrow">// the kb</p>
+    <h2 class="section-heading">Felix knows what <em>it</em> knows. And it's honest about what it doesn't.</h2>
+    <p class="section-lead">Twenty-seven curated sections, eight domains. Every section is a real resolution pattern someone wrote down — not synthetic, not scraped, not made up. If the similarity score isn't high enough, Felix doesn't guess. It asks, or it escalates.</p>
+
+    <div class="kb-grid" role="list">
+      <div class="kb-item" role="listitem"><span class="kb-sec">§1</span><span class="kb-name">Calling &amp; Dialer</span></div>
+      <div class="kb-item" role="listitem"><span class="kb-sec">§2</span><span class="kb-name">SMS &amp; Notifications</span></div>
+      <div class="kb-item" role="listitem"><span class="kb-sec">§3</span><span class="kb-name">Leads Dashboard</span></div>
+      <div class="kb-item" role="listitem"><span class="kb-sec">§4</span><span class="kb-name">Partner Dashboard</span></div>
+      <div class="kb-item" role="listitem"><span class="kb-sec">§5</span><span class="kb-name">Authentication &amp; Sessions</span></div>
+      <div class="kb-item" role="listitem"><span class="kb-sec">§6</span><span class="kb-name">CRM &amp; Integrations</span></div>
+      <div class="kb-item" role="listitem"><span class="kb-sec">§7</span><span class="kb-name">Payments &amp; Billing</span></div>
+      <div class="kb-item" role="listitem"><span class="kb-sec">§8</span><span class="kb-name">Account &amp; Permissions</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ Similarity threshold scale ═══════════════ -->
+<section class="similarity-section">
+  <div class="container">
+    <p class="eyebrow">// how it matches</p>
+    <h2 class="section-headline">Every query gets a similarity score. The score decides the path.</h2>
+
+    <div class="similarity-scale">
+      <!-- Example query markers above the scale -->
+      <div class="example-markers">
+        <div class="example-marker" style="left: 91%;">
+          <div class="example-dot" style="background: var(--rust-400);"></div>
+          <div class="example-label">
+            <span class="example-query">"CRM session timed out"</span>
+            <span class="example-score">0.91</span>
+          </div>
+        </div>
+        <div class="example-marker" style="left: 72%;">
+          <div class="example-dot" style="background: var(--lavender-400);"></div>
+          <div class="example-label">
+            <span class="example-query">"dialer making weird noises"</span>
+            <span class="example-score">0.72</span>
+          </div>
+        </div>
+        <div class="example-marker" style="left: 34%;">
+          <div class="example-dot" style="background: var(--rust-500);"></div>
+          <div class="example-label">
+            <span class="example-query">"homepage broken on iOS Safari"</span>
+            <span class="example-score">0.34</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- The scale bar -->
+      <div class="scale-track">
+        <div class="zone zone-escalate" style="width: 65%;">
+          <span class="zone-label">escalate</span>
+        </div>
+        <div class="zone zone-ask" style="width: 20%;">
+          <span class="zone-label">ask</span>
+        </div>
+        <div class="zone zone-resolve" style="width: 15%;">
+          <span class="zone-label">resolve</span>
+        </div>
+
+        <!-- Threshold tick at 0.65 -->
+        <div class="threshold-tick" style="left: 65%;">
+          <div class="threshold-line"></div>
+          <span class="threshold-label">threshold 0.65</span>
+        </div>
+      </div>
+
+      <!-- Axis labels -->
+      <div class="scale-axis">
+        <span>0.0</span>
+        <span>0.25</span>
+        <span>0.5</span>
+        <span>0.75</span>
+        <span>1.0</span>
+      </div>
+    </div>
+
+    <p class="similarity-caption">// 27 sections · cosine similarity · threshold 0.65</p>
+  </div>
+</section>
+
+<!-- ═══════════════ §7 ROADMAP ═══════════════ -->
+<section id="roadmap">
+  <div class="container">
+    <p class="eyebrow">// what's next</p>
+    <h2 class="section-heading">Felix is in active development. Here's <em>what's coming</em>.</h2>
+    <p class="section-lead">The work in front of us, ordered by how confident we are it'll happen. Anything past v2.5 is intent, not promise.</p>
+
+    <div class="roadmap-timeline">
+      <article class="milestone" data-status="shipped">
+        <div class="ms-head">
+          <span class="ms-tag"><span class="lime-dot-pulse" aria-hidden="true"></span>Shipped</span>
+          <span class="ms-version">v1.9.2</span>
+        </div>
+        <p class="ms-desc">Live in production</p>
+        <ul class="ms-bullets">
+          <li>Three-path triage (Resolve / Ask / Escalate)</li>
+          <li>27-section curated KB, eight domains</li>
+          <li>BGE embeddings + cosine retrieval at 0.65 threshold</li>
+          <li>Every decision logged to Supabase</li>
+        </ul>
+      </article>
+
+      <article class="milestone" data-status="next">
+        <div class="ms-head">
+          <span class="ms-tag">Next</span>
+          <span class="ms-version">v2.0–v2.2</span>
+        </div>
+        <p class="ms-desc">In progress, next 2 weeks</p>
+        <ul class="ms-bullets">
+          <li>Per-team routing rules pulled from a config (not hardcoded)</li>
+          <li>👎-driven KB authoring — bad answers become draft entries</li>
+          <li>Weekly digest of unresolved patterns sent to product</li>
+        </ul>
+      </article>
+
+      <article class="milestone" data-status="soon">
+        <div class="ms-head">
+          <span class="ms-tag">Soon</span>
+          <span class="ms-version">v2.3–v2.5</span>
+        </div>
+        <p class="ms-desc">Next quarter</p>
+        <ul class="ms-bullets">
+          <li>Multi-turn clarification (Ask can ask twice before escalating)</li>
+          <li>Slack-thread summarisation for handoff to engineers</li>
+          <li>Lightweight admin UI to edit KB without a PR</li>
+        </ul>
+      </article>
+
+      <article class="milestone" data-status="later">
+        <div class="ms-head">
+          <span class="ms-tag">Later</span>
+          <span class="ms-version">v3.0+</span>
+        </div>
+        <p class="ms-desc">Exploring</p>
+        <ul class="ms-bullets">
+          <li>Proactive triage — Felix flags repeat patterns before they're asked</li>
+          <li>Integration with Linear so Escalate creates a structured ticket</li>
+          <li>Voice — same brain, different surface (maybe)</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ §8 BUILT BY SHREYAS ═══════════════ -->
+<section id="credits">
+  <div class="container container-narrow">
+    <p class="eyebrow">// credits</p>
+    <div class="credits-head">
+      <img src="assets/felix-mascot.png" alt="Felix" class="felix-mascot felix-mascot--avatar-sm">
+      <h2 class="section-heading" style="margin:0;">Built by <em>Shreyas</em>.</h2>
+    </div>
+    <p class="section-lead">Felix is built independently by Shreyas Jadhav — a product builder shipping useful tools in public. The knowledge base patterns come from real production use across support and ops teams. The architecture is intentionally small, the dependencies are few, and the whole thing is something a person can reason about in an afternoon.</p>
+    <p class="section-lead">The first working version shipped in under three weeks. Everything since has been refinement, KB authoring, and listening hard to the 👍/👎 feedback loop.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ §9 FAQ ═══════════════ -->
+<section id="faq">
+  <div class="container container-narrow">
+    <p class="eyebrow">// faq</p>
+    <h2 class="section-heading">Frequently <em>asked</em>.</h2>
+
+    <div class="faq-wrap">
+      <details>
+        <summary>Is Felix replacing engineers?</summary>
+        <p>No. Felix handles the repetitive stuff — the same twenty questions support reps ask every week. Engineers get more time on the work that needs engineering. The escalation path is faster, not absent.</p>
+      </details>
+
+      <details>
+        <summary>What happens if Felix is wrong?</summary>
+        <p>Support reps react with 👎. That's a signal: the KB entry needs editing, or the question pattern is new and needs a new entry. Wrong answers don't disappear quietly — they get logged, reviewed, and either fixed or used to bootstrap a new KB section.</p>
+      </details>
+
+      <details>
+        <summary>Why not use a generic AI bot?</summary>
+        <p>Because a generic bot would hallucinate domain-specific answers and route everything to whoever it thought was an "engineer." Felix only resolves when it has a real KB match. When it doesn't know, it asks one question or escalates — it doesn't guess.</p>
+      </details>
+
+      <details>
+        <summary>How is the KB maintained?</summary>
+        <p>Today: hand-authored from real resolution threads, reviewed before publishing. Next quarter: 👎 reactions auto-generate draft KB entries, and there's a lightweight admin UI so KB edits don't need a PR.</p>
+      </details>
+
+      <details>
+        <summary>What data does Felix log?</summary>
+        <p>Every triage decision: the original message, the path chosen, the KB section cited (if any), the reaction, and any follow-up. Stored in Supabase. Used to compute resolution rate per domain, false-positive rate, and which KB sections actually pull their weight.</p>
+      </details>
+
+      <details>
+        <summary>Who can I contact about Felix?</summary>
+        <p>Me — directly. See the <em>Working together</em> section just below, or write to <a href="mailto:shreyasjadhav531@gmail.com" class="lab-link">shreyasjadhav531@gmail.com</a>. Felix is a one-person project; you'll hear back fast.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<div class="working-together-intro">
+  <p>// got this far? here's the part that matters</p>
+</div>
+
+<!-- ═══════════════ §10 WORKING TOGETHER ═══════════════ -->
+<section id="working-together" class="working-together">
+  <div class="working-together-bg" aria-hidden="true"></div>
+
+  <div class="container">
+    <div class="working-together-block">
+      <div class="working-together-header">
+        <span class="working-together-eyebrow">// working together</span>
+        <img src="assets/felix-mascot.png" alt="Felix" class="felix-mascot felix-mascot--full working-together-mascot">
+      </div>
+
+      <h2 class="working-together-title">
+        Felix doesn't have a price tag <em>yet</em>.
+      </h2>
+
+      <p class="working-together-body">
+        I haven't sold something like this before, and I'd rather figure out fair pricing with the first few teams than guess in public. What I do know: I'm genuinely excited to put this in someone's Slack and see it work. If Felix solves a real problem for your team — drowning support channels, scattered context, repetitive triage — write to me. We'll talk through what's working, what's still rough, and figure out what makes sense for your situation.
+      </p>
+
+      <div class="working-together-links">
+        <a href="mailto:shreyasjadhav531@gmail.com" class="working-together-link">
+          → shreyasjadhav531@gmail.com
+        </a>
+        <a href="https://x.com/shreyasinpublic" class="working-together-link"
+           target="_blank" rel="noopener">
+          → @shreyasinpublic on X
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="felix-footer">
+  <div class="container">
+    <div class="footer-content">
+      <span class="footer-line">Felix · 2026</span>
+      <a href="https://shrey.lab" class="shrey-lab-signature" target="_blank" rel="noopener" aria-label="Built by shrey.lab">
+        <span class="monogram-mark" aria-hidden="true">
+          <em>s</em><span class="lime-dot">●</span>
+        </span>
+        <span class="monogram-text">built by shrey<span class="lime-dot-tiny">.</span>lab</span>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ─── Curtain: agent message → Felix bubble → typewriter ───────
+  var curtain = document.getElementById('felixCurtain');
+  var dots = document.getElementById('curtainDots');
+  var text = document.getElementById('curtainText');
+  var targetText = 'On it.';
+  if (curtain) {
+    if (reduceMotion) {
+      curtain.remove();
+    } else {
+      // Felix bubble appears at 1200ms (CSS), dots animate for 1100ms,
+      // then start typewriter at 2300ms (~100ms/char).
+      setTimeout(function () {
+        if (dots) dots.classList.add('hide');
+        var i = 0;
+        var interval = setInterval(function () {
+          if (!text) return;
+          text.textContent = targetText.slice(0, ++i);
+          if (i >= targetText.length) clearInterval(interval);
+        }, 100);
+      }, 2300);
+      // CSS fades out at 3900ms; remove from DOM at 4500ms.
+      setTimeout(function () { if (curtain.parentNode) curtain.remove(); }, 4500);
+    }
+  }
+
+  // ─── Architecture canvas fit ───────────────────────────────────
+  // Native canvas is 1400×880; scale uniformly to fit the wrapper width.
+  // Runs on load, resize, and once after fonts/layout settle.
+  function archFit() {
+    var wraps = document.querySelectorAll('.architecture-section .arch-wrap');
+    wraps.forEach(function (wrap) {
+      var canvas = wrap.querySelector('.canvas');
+      if (!canvas) return;
+      var w = wrap.clientWidth;
+      var scale = w / 1400;
+      canvas.style.transform = 'scale(' + scale + ')';
+    });
+  }
+  archFit();
+  window.addEventListener('resize', archFit, { passive: true });
+  // Belt-and-braces: rerun after the first paint in case fonts shift layout.
+  setTimeout(archFit, 0);
+
+  // ─── Nav scroll state ──────────────────────────────────────────
+  var nav = document.querySelector('.felix-top-nav');
+  if (nav) {
+    var onNavScroll = function () {
+      if (window.scrollY > 20) nav.classList.add('scrolled');
+      else nav.classList.remove('scrolled');
+    };
+    window.addEventListener('scroll', onNavScroll, { passive: true });
+    onNavScroll();
+  }
+
+  // ─── Cursor follower (hero only, desktop only, no reduce-motion) ──
+  var cursor = document.getElementById('felix-cursor');
+  var hero = document.getElementById('hero');
+  var canHover = window.matchMedia('(hover: hover)').matches;
+  if (cursor && hero && canHover && !reduceMotion) {
+    var tx = 0, ty = 0, cx = 0, cy = 0, raf = null, visible = false;
+    var loop = function () {
+      cx += (tx - cx) * 0.18;
+      cy += (ty - cy) * 0.18;
+      cursor.style.transform = 'translate(' + (cx - 4) + 'px,' + (cy - 4) + 'px)';
+      raf = requestAnimationFrame(loop);
+    };
+    hero.addEventListener('mouseenter', function () {
+      cursor.style.opacity = '1'; visible = true;
+      if (!raf) loop();
+    });
+    hero.addEventListener('mouseleave', function () {
+      cursor.style.opacity = '0'; visible = false;
+    });
+    hero.addEventListener('mousemove', function (e) {
+      tx = e.clientX; ty = e.clientY;
+      if (!visible) { cursor.style.opacity = '1'; visible = true; }
+      if (!raf) loop();
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>
