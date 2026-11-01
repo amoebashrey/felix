@@ -1,55 +1,56 @@
 /* ============================================================
    Felix — sub-brand overrides
-   Inherits tokens.css. Rust replaces lime as the protagonist.
-   Lime survives only at: footer monogram + roadmap "Shipped" pulse.
+   Inherits tokens.css (never edited). This file maps Felix's world,
+   round 4 (2026-11-01): a near-black instrument panel. Hairline grid,
+   crosshair markers, mono uppercase labels, square buttons, framed
+   terminal mocks, isometric line art, halftone and blurred washes.
+   Colours come from the mascot: rust cap, lavender shirt, cream skin,
+   on ink-900. Typeface stays Geist + Geist Mono. Felix's voice stays
+   VT323; the pixel mascot stays his Slack face.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Fraunces:ital,opsz,wght@0,9..144,200..900;1,9..144,200..900&display=swap');
-
 :root {
-  /* Display fonts — Bricolage Grotesque for headings, Fraunces italic for breaks */
-  --font-display:         'Bricolage Grotesque', 'Geist', sans-serif;
-  --font-italic-display:  'Fraunces', 'Instrument Serif', serif;
+  --font-display:  'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* Felix accent override — rust is the new protagonist */
-  --accent:        var(--rust-400);
-  --accent-fg:     var(--ink-25);
-  --accent-hover:  var(--rust-500);
-  --accent-tint:   var(--rust-100);
+  /* Ground and ink */
+  --page:        #0E0E0C;   /* ink-900 */
+  --page-2:      #141412;   /* raised cells, terminal body */
+  --page-3:      #1B1B18;   /* hover, inset rows */
+  --fg:          #EAE8E1;   /* ink-100 — headings, strong text */
+  --fg-2:        #B0ACA0;   /* ink-300 — body, leads */
+  --fg-3:        #8F8B80;   /* captions, mono labels (5.6:1 on page) */
+  --ink:         #EAE8E1;
+  --line:        rgba(234, 232, 225, 0.08);   /* frame rules */
+  --line-2:      rgba(234, 232, 225, 0.14);   /* card borders */
+  --line-3:      rgba(234, 232, 225, 0.24);   /* outline buttons, illustrations */
+  --cross:       rgba(234, 232, 225, 0.32);   /* crosshair markers */
 
-  /* Path color coding — used in Section 3 flowchart + Section 5 scenario cards */
-  --path-resolve:  var(--rust-400);
-  --path-ask:      var(--lavender-400);
-  --path-escalate: var(--rust-500);
+  /* Felix brand: from the mascot */
+  --rust:        #D6692F;   /* rust-400 — the cap, primary action */
+  --rust-hi:     #E48C61;   /* rust-300 — hover, accent text */
+  --rust-deep:   #B85420;   /* rust-500 — band grid */
+  --lav:         #B5A4E2;   /* lavender-300 — the shirt */
+  --lav-deep:    #7E68B8;
+  --cream:       #F0E0C6;   /* the face */
 
-  /* Soft glow for ambient warmth */
-  --felix-glow:    var(--rust-300);
+  /* Three paths, tuned for the dark ground */
+  --resolve:        #5BC77A;
+  --resolve-dot:    #5BC77A;
+  --resolve-tint:   rgba(91, 199, 122, 0.12);
+  --ask:            #B5A4E2;
+  --ask-dot:        #B5A4E2;
+  --ask-tint:       rgba(181, 164, 226, 0.14);
+  --escalate:       #F2604A;
+  --escalate-dot:   #F2604A;
+  --escalate-tint:  rgba(242, 96, 74, 0.13);
 
-  /* Focus ring uses rust now, not lime */
-  --focus-ring:    0 0 0 2px var(--bg), 0 0 0 4px var(--rust-400);
+  /* tokens.css semantics remapped */
+  --accent:        var(--rust);
+  --accent-fg:     #0E0E0C;
+  --accent-hover:  var(--rust-hi);
+  --focus-ring:    0 0 0 2px var(--page), 0 0 0 4px var(--rust-hi);
 }
-::selection { background: var(--rust-400); color: var(--ink-25); }
-
-/* Dark mode: brutal shadow uses rust instead of lime */
-[data-theme="dark"] {
-  --shadow-brutal-sm: 3px 3px 0 var(--rust-400);
-  --shadow-brutal-md: 5px 5px 0 var(--rust-400);
-  --shadow-brutal-lg: 8px 8px 0 var(--rust-400);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --shadow-brutal-sm: 3px 3px 0 var(--rust-400);
-    --shadow-brutal-md: 5px 5px 0 var(--rust-400);
-    --shadow-brutal-lg: 8px 8px 0 var(--rust-400);
-  }
-}
-
-/* Dark-mode headings — drop from ink-25 to ink-100 so they don't read as full white */
-[data-theme="dark"] h1,
-[data-theme="dark"] h2,
-[data-theme="dark"] h3 {
-  color: var(--ink-100);
-}
+::selection { background: var(--rust); color: #0E0E0C; }
 
 /* ─── Felix mascot — pixel-art PNG with crisp scaling ─────── */
 .felix-mascot {
@@ -64,19 +65,19 @@
   width: 40px; height: 40px;
   object-fit: cover;
   object-position: top center;
-  border-radius: 6px;
+  border-radius: 2px;
 }
 .felix-mascot--avatar-sm {
   width: 28px; height: 28px;
   object-fit: cover;
   object-position: top center;
-  border-radius: 5px;
+  border-radius: 2px;
 }
 .felix-mascot--nav {
-  width: 32px; height: 32px;
+  width: 22px; height: 22px;
   object-fit: cover;
   object-position: top center;
-  border-radius: 5px;
+  border-radius: 2px;
 }
 
 /* ─── Felix's voice — VT323 for every Felix-spoken word ──────── */
@@ -85,7 +86,7 @@
   font-size: 1.125em;
   line-height: 1.45;
   letter-spacing: 0.01em;
-  color: var(--fg);
+  color: var(--cream);
   white-space: pre-line;
 }
 
@@ -102,12 +103,13 @@
 .skip-link {
   position: absolute;
   left: 8px; top: -40px;
-  background: var(--rust-400);
-  color: var(--ink-25);
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
+  background: var(--rust);
+  color: #0E0E0C;
+  padding: 8px 14px;
   font-family: var(--font-mono);
-  font-size: var(--text-2xs);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   z-index: 10000;
   transition: top var(--duration-fast) var(--ease-out);
 }
